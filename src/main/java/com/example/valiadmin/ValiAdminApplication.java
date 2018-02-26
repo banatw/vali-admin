@@ -42,7 +42,7 @@ public class ValiAdminApplication {
 	private MyuserService myuserService;
 
 	@Autowired
-	private ShaPasswordEncoder passwordEncoder;
+	private MyPasswordEncoder passwordEncoder;
 
 	public static void main(String[] args) {
 		SpringApplication.run(ValiAdminApplication.class, args);
@@ -61,7 +61,7 @@ public class ValiAdminApplication {
 
 			User user = new User();
 			user.setUsername("admin");
-			String password = passwordEncoder.encodePassword("123",null);
+			String password = passwordEncoder.encode("123");
 			user.setPassword(password);
 			user.setEnabled(true);
 			user.setAuditDate(new Date());
@@ -78,7 +78,7 @@ public class ValiAdminApplication {
 
 			user.setRoles(roleSet);
 			userRepo.save(user);
-			System.out.println(user.getPassword());
+			//System.out.println(user.getPassword());
 		};
 	}
 
@@ -103,6 +103,22 @@ public class ValiAdminApplication {
 		}
 	}
 
+	public class MyPasswordEncoder implements PasswordEncoder {
+
+		@Override
+		public String encode(CharSequence charSequence) {
+			ShaPasswordEncoder shaPasswordEncoder = new ShaPasswordEncoder(256);
+			shaPasswordEncoder.setEncodeHashAsBase64(true);
+			return shaPasswordEncoder.encodePassword(charSequence.toString(),"123");
+		}
+
+		@Override
+		public boolean matches(CharSequence charSequence, String s) {
+			ShaPasswordEncoder shaPasswordEncoder = new ShaPasswordEncoder(256);
+			shaPasswordEncoder.setEncodeHashAsBase64(true);
+			return shaPasswordEncoder.encodePassword(charSequence.toString(),"123").equals(s);
+		}
+	}
 
 	@Service
 	public class MyuserService implements UserDetailsService {
@@ -123,10 +139,8 @@ public class ValiAdminApplication {
 
 
 	@Bean
-	public ShaPasswordEncoder passwordEncoder() {
-		ShaPasswordEncoder shaPasswordEncoder = new ShaPasswordEncoder(256);
-		shaPasswordEncoder.setEncodeHashAsBase64(true);
-		return shaPasswordEncoder;
+	public MyPasswordEncoder passwordEncoder() {
+		return new MyPasswordEncoder();
 	}
 
 	@EnableWebSecurity
